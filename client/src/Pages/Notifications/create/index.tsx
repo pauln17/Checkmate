@@ -13,9 +13,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useGet, usePost, usePatch } from "@/Hooks/UseApi";
 import { useNotificationForm } from "@/Hooks/useNotificationForm";
 import type { NotificationFormData } from "@/Validation/notifications";
-import type { Notification } from "@/Types/Notification";
+import { type Notification, NotificationChannels, AuthTypes } from "@/Types/Notification";
 import { useTranslation } from "react-i18next";
-import { NotificationChannels } from "@/Types/Notification";
 
 const NotificationsCreatePage = () => {
 	const { t } = useTranslation();
@@ -46,6 +45,7 @@ const NotificationsCreatePage = () => {
 	}, [defaults, reset]);
 
 	const watchedType = watch("type");
+	const watchedAuthType = watch("authType");
 
 	useEffect(() => {
 		clearErrors();
@@ -150,7 +150,8 @@ const NotificationsCreatePage = () => {
 			{watchedType !== "matrix" &&
 				watchedType !== "telegram" &&
 				watchedType !== "pushover" &&
-				watchedType !== "twilio" && (
+				watchedType !== "twilio" &&
+				watchedType !== "ntfy" && (
 					<ConfigBox
 						title={addressConfig.title}
 						subtitle={addressConfig.description}
@@ -345,6 +346,34 @@ const NotificationsCreatePage = () => {
 					}
 				/>
 			)}
+			{watchedType === "ntfy" && (
+				<ConfigBox
+					title={t("pages.notifications.form.ntfy.title")}
+					subtitle={t("pages.notifications.form.ntfy.description")}
+					rightContent={
+						<Stack spacing={theme.spacing(8)}>
+							<Controller
+								name="address"
+								control={control}
+								defaultValue={"address" in defaults ? defaults.address : ""}
+								render={({ field, fieldState }) => (
+									<TextField
+										{...field}
+										type="text"
+										fieldLabel={t("pages.notifications.form.ntfy.optionNtfyAddress")}
+										placeholder={t(
+											"pages.notifications.form.ntfy.placeholderNtfyAddress"
+										)}
+										fullWidth
+										error={!!fieldState.error}
+										helperText={fieldState.error?.message ?? ""}
+									/>
+								)}
+							/>
+						</Stack>
+					}
+				/>
+			)}
 			{watchedType === "matrix" && (
 				<ConfigBox
 					title={t("pages.notifications.form.matrix.title")}
@@ -391,16 +420,111 @@ const NotificationsCreatePage = () => {
 									<TextField
 										{...field}
 										type="text"
-										fieldLabel={t(
-											"pages.notifications.form.accessToken.optionAccessToken"
+										fieldLabel={t("pages.notifications.form.auth.optionAccessToken")}
+										placeholder={t(
+											"pages.notifications.form.auth.placeholderAccessToken"
 										)}
-										placeholder={t("pages.notifications.form.accessToken.placeholder")}
 										fullWidth
 										error={!!fieldState.error}
 										helperText={fieldState.error?.message ?? ""}
 									/>
 								)}
 							/>
+						</Stack>
+					}
+				/>
+			)}
+			{watchedType === "ntfy" && (
+				<ConfigBox
+					title={t("pages.notifications.form.auth.title")}
+					subtitle={t("pages.notifications.form.auth.description")}
+					rightContent={
+						<Stack spacing={theme.spacing(8)}>
+							<Controller
+								name="authType"
+								control={control}
+								defaultValue={"authType" in defaults ? defaults.authType : "none"}
+								render={({ field, fieldState }) => (
+									<Select
+										value={field.value}
+										fieldLabel={t("pages.notifications.form.auth.optionAuthType")}
+										error={!!fieldState.error}
+										onChange={field.onChange}
+									>
+										{AuthTypes.map((type: string) => (
+											<MenuItem
+												key={type}
+												value={type}
+											>
+												<Typography textTransform="capitalize">{type}</Typography>
+											</MenuItem>
+										))}
+									</Select>
+								)}
+							/>
+							{watchedAuthType === "basic" && (
+								<>
+									<Controller
+										name="username"
+										control={control}
+										defaultValue={"username" in defaults ? defaults.username : ""}
+										render={({ field, fieldState }) => (
+											<TextField
+												{...field}
+												type="text"
+												fieldLabel={t("pages.notifications.form.auth.optionUsername")}
+												placeholder={t(
+													"pages.notifications.form.auth.placeholderUsername"
+												)}
+												fullWidth
+												error={!!fieldState.error}
+												helperText={fieldState.error?.message ?? ""}
+											/>
+										)}
+										shouldUnregister={true}
+									/>
+									<Controller
+										name="password"
+										control={control}
+										defaultValue={"password" in defaults ? defaults.password : ""}
+										render={({ field, fieldState }) => (
+											<TextField
+												{...field}
+												type="password"
+												fieldLabel={t("pages.notifications.form.auth.optionPassword")}
+												placeholder={t(
+													"pages.notifications.form.auth.placeholderPassword"
+												)}
+												fullWidth
+												error={!!fieldState.error}
+												helperText={fieldState.error?.message ?? ""}
+											/>
+										)}
+										shouldUnregister={true}
+									/>
+								</>
+							)}
+							{watchedAuthType === "bearer" && (
+								<Controller
+									name="accessToken"
+									control={control}
+									defaultValue={"accessToken" in defaults ? defaults.accessToken : ""}
+									render={({ field, fieldState }) => (
+										<TextField
+											{...field}
+											type="text"
+											fieldLabel={t("pages.notifications.form.auth.optionAccessToken")}
+											placeholder={t(
+												"pages.notifications.form.auth.placeholderAccessToken"
+											)}
+											fullWidth
+											error={!!fieldState.error}
+											helperText={fieldState.error?.message ?? ""}
+										/>
+									)}
+									shouldUnregister={true}
+								/>
+							)}
 						</Stack>
 					}
 				/>

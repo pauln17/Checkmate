@@ -1,3 +1,4 @@
+import { AuthTypes } from "@/Types/Notification";
 import { z } from "zod";
 
 const baseSchema = z.object({
@@ -70,6 +71,43 @@ const twilioSchema = baseSchema.extend({
 	twilioPhoneNumber: z.string().min(1, "Twilio phone number is required"),
 });
 
+const ntfySchema = baseSchema
+	.extend({
+		type: z.literal("ntfy"),
+		address: z.string().min(1, "URL is required").url("Please enter a valid URL"),
+		authType: z.enum(AuthTypes).optional(),
+		username: z.string().optional(),
+		password: z.string().optional(),
+		accessToken: z.string().optional(),
+	})
+	.superRefine((data, ctx) => {
+		if (data.authType === "basic") {
+			if (!data.username) {
+				ctx.addIssue({
+					code: "custom",
+					message: "Username is required",
+					path: ["username"],
+				});
+			}
+			if (!data.password) {
+				ctx.addIssue({
+					code: "custom",
+					message: "Password is required",
+					path: ["password"],
+				});
+			}
+		}
+		if (data.authType === "bearer") {
+			if (!data.accessToken) {
+				ctx.addIssue({
+					code: "custom",
+					message: "Token is required",
+					path: ["accessToken"],
+				});
+			}
+		}
+	});
+
 export const notificationSchema = z.discriminatedUnion("type", [
 	emailSchema,
 	slackSchema,
@@ -81,6 +119,7 @@ export const notificationSchema = z.discriminatedUnion("type", [
 	telegramSchema,
 	pushoverSchema,
 	twilioSchema,
+	ntfySchema,
 ]);
 
 export type NotificationFormData = z.infer<typeof notificationSchema>;
